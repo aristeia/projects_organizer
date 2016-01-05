@@ -58,6 +58,78 @@ daterange for event x by average hours for x till that date:
 
 
 '''
+def populate_days(start, nDays):
+  return [start+relativedelta.relativedelta(days=d) 
+          for d in range(nDays)]
+
+def populate_hours(days,current_event):
+  return [sum(
+            [y[1] 
+            for key,y in workdays[x.toordinal()].items() 
+            if key!=current_event]) 
+          for x in days]
+
+def hour_sorted(lst, hours):
+  return  [x[1] 
+          for x in sorted(
+            zip(hours,lst),
+            reverse=True)]
+
+def process_event(clas,work,event,nDays):
+  days = populate_days(event[3],nDays)
+  hours = populate_hours(days,clas+"_"+work)
+  minHours, maxHours = min(hours), max(hours)
+  hoursToFill = (len(days)*maxHours)-sum(hours)
+  i = 0
+  extraDaysI = 0
+  if hoursToFill > event[1]: 
+    days = hour_sorted(days,hours)
+    while hoursToFill > event[1] and i!=len(days)-2:
+      diff = (hours[i]-hours[i+1])
+      i+=1
+      maxHours=hours[i]
+      hoursToFill-=(len(days)-i)*diff
+      extraDaysI = i
+  if i==len(days)-2 and hoursToFill > event[1]:
+    workdays[days[len(days)-1].toordinal()][clas+"_"+work][1] = float(event[1])
+    for d in range(len(days)-1):
+      workdays[days[d].toordinal()][clas+"_"+work][1] = 0.0
+  else:
+    dayHours = (event[1]-hoursToFill)/float(len(days)-extraDaysI)
+    newHours = []
+    for d in range(len(days)):
+      hour = (
+        ( dayHours if d>=extraDaysI else 0.0)+
+        ( maxHours-hours[d] if maxHours>hours[d] else 0.0))
+      workdays[days[d].toordinal()][clas+"_"+work][1] = hour
+      if hour>0:
+        insort(newHours,[workdays[days[d].toordinal()][clas+"_"+work][1],d])
+    def prevent_inane_workdays(prev_sorted=False, mult=3):
+      if not prev_sorted:
+        newHours.sort()
+      i=0
+      maxtol = min(max(0.125*mult,event[1]*0.05*mult),0.25*mult)
+      mintol = 0.1625*mult
+      while i<len(newHours)-1:
+        if (newHours[i+1][0]<maxtol and newHours[i+1][0]>newHours[i][0]) or newHours[i][0]<mintol:
+          workdays[days[newHours[i][1]].toordinal()][clas+"_"+work][1] = min(newHours[i][0]+newHours[i+1][0],maxtol)
+          workdays[days[newHours[i+1][1]].toordinal()][clas+"_"+work][1] = newHours[i][0]+newHours[i+1][0] - workdays[days[newHours[i][1]].toordinal()][clas+"_"+work][1]
+          newHours[i][0] = workdays[days[newHours[i][1]].toordinal()][clas+"_"+work][1]
+          newHours[i+1][0] = workdays[days[newHours[i+1][1]].toordinal()][clas+"_"+work][1]
+        i+=1
+    prevent_inane_workdays(True,2)
+    # prevent_inane_workdays(2)
+    # prevent_inane_workdays(2)
+    # prevent_inane_workdays(1)
+    prevent_inane_workdays(1)
+
+
+def assess_event(clas,work,event):
+  nDays = (event[0]-event[3]).days
+  if nDays==1 or work=='today':
+    workdays[(event[0]-relativedelta.relativedelta(days=1)).toordinal()][clas+"_"+work][1] = event[1]
+  else:
+    process_event(clas,work,event,nDays)
 
 def clean_events():
   old_variance = calc_variance()
@@ -68,63 +140,9 @@ def clean_events():
     shuffle(worksTemp)
     for work, asmts in worksTemp:
       for event in asmts:
-        nDays = (event[0]-event[3]).days
-        if nDays==1 or work=='today':
-          workdays[(event[0]-relativedelta.relativedelta(days=1)).toordinal()][clas+"_"+work][1] = event[1]
-        else:
-          days = []
-          for d in range(nDays):
-            days.append(
-              event[3]+relativedelta.relativedelta(days=d))
-          hours = [sum([y[1] for key,y in workdays[x.toordinal()].items() if key!=clas+"_"+work]) for x in days]
-          minHours, maxHours = min(hours), max(hours)
-          hoursToFill =  (len(days)*maxHours)-sum(hours)
-          i = 0
-          if hoursToFill> event[1]:
-            newDays = deepcopy(days)
-            days.sort(reverse=True, key=(
-              lambda x: hours[newDays.index(x)]))
-            hours = [sum([y[1] for key,y in workdays[x.toordinal()].items() if key!=clas+"_"+work]) for x in days]
-            while hoursToFill> event[1] and i!=len(days)-2:
-              diff = (hours[i]-hours[i+1])
-              i+=1
-              maxHours=hours[i]
-              hoursToFill-=(len(days)-i)*diff
-              extraDaysI = i
-          else:
-            extraDaysI = 0
-          if i==len(days)-2 and hoursToFill> event[1]:
-            workdays[days[len(days)-1].toordinal()][clas+"_"+work][1] = float(event[1])
-            for d in range(len(days)-1):
-              workdays[days[d].toordinal()][clas+"_"+work][1] = 0.0
-          else:
-            dayHours = (event[1]-hoursToFill)/float(len(days)-extraDaysI)
-            newHours = []
-            for d in range(len(days)):
-              hour = (
-                ( dayHours if d>=extraDaysI else 0.0)+
-                ( maxHours-hours[d] if maxHours>hours[d] else 0.0))
-              workdays[days[d].toordinal()][clas+"_"+work][1] = hour
-              if hour>0:
-                insort(newHours,[workdays[days[d].toordinal()][clas+"_"+work][1],d])
-            def prevent_inane_workdays(prev_sorted=False, mult=3):
-              if not prev_sorted:
-                newHours.sort()
-              i=0
-              maxtol = min(max(0.125*mult,event[1]*0.05*mult),0.25*mult)
-              mintol = 0.1625*mult
-              while i<len(newHours)-1:
-                if (newHours[i+1][0]<maxtol and newHours[i+1][0]>newHours[i][0]) or newHours[i][0]<mintol:
-                  workdays[days[newHours[i][1]].toordinal()][clas+"_"+work][1] = min(newHours[i][0]+newHours[i+1][0],maxtol)
-                  workdays[days[newHours[i+1][1]].toordinal()][clas+"_"+work][1] = newHours[i][0]+newHours[i+1][0] - workdays[days[newHours[i][1]].toordinal()][clas+"_"+work][1]
-                  newHours[i][0] = workdays[days[newHours[i][1]].toordinal()][clas+"_"+work][1]
-                  newHours[i+1][0] = workdays[days[newHours[i+1][1]].toordinal()][clas+"_"+work][1]
-                i+=1
-            prevent_inane_workdays(True,2)
-            # prevent_inane_workdays(2)
-            # prevent_inane_workdays(2)
-            # prevent_inane_workdays(1)
-            prevent_inane_workdays(1)
+        assess_event(clas,work,event)
+        
+          
   return old_variance-calc_variance()
 
 def calc_variance():
@@ -199,7 +217,7 @@ if i>0:
 else:
   today = date.today()
 
-lines = [[y.strip() for y in x.split(',')] for x in sys.stdin.readlines() if len(x)>1 and x[0]!='#']
+lines = [[y.strip().replace('_','') for y in x.split(',')] for x in sys.stdin.readlines() if len(x)>1 and x[0]!='#']
 com = '/*'
 for line in lines[:]:
   for thing in line:
@@ -209,7 +227,7 @@ for line in lines[:]:
     lines.remove(line)
 
 for line in lines[:]:
-  year = today.year if today.month>=line[1] else today+relativedelta.relativedelta(days=365).year
+  year = today.year if today.month>=int(line[1]) else (today+relativedelta.relativedelta(days=365)).year
   eventday = date(year, int(line[1]), int(line[2]))
   if eventday <= today:
     lines.remove(line)
@@ -220,7 +238,7 @@ for line in lines[:]:
       events[line[3]][line[4]] = []
     events[line[3]][line[4]].append([
       eventday,
-      float(line[0]) if line.strip('xde')==line[0] else line[0], 
+      float(line[0]) if line[0].strip('xde')==line[0] else line[0], 
       line[5]]) 
 for line in lines:
   eventday = date(year, int(line[1]), int(line[2]))
