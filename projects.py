@@ -218,7 +218,7 @@ if any([arg in ['-h','--help'] for arg in sys.argv]):
     \n\nCSV file format: (object_type::description)
     \n  float::hours_estimate,int::month,int::day,string::class,string::project,string::assignment
     \n\nFor each class, for each 'project' for that class, you will have one assignment for that project being assigned to work on at any one time, so that no two assignments within one project type are being worked on at once, and that you only work on the one due most soon at any time.
-    \n\ndayfile.json file format: { key:value,... } where each key is a YYYYMMDD or n (0-6 monday-sunday) and val is amplifier.
+    \n\ndayfile.json file format: { key:value,... } where each key is a YYYYMMDD or n (0-6 monday-sunday) and val is amplifier. See writeDates.py for more info.
     \nComing soon: 
     \n  optional year parameter,
     \n  optional parameter multiple assignments per project to be worked on at once, so that a set of assignments can be finished before the next set of assignments is to be done. 

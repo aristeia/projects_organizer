@@ -39,5 +39,5 @@ dates = { #fill these in with your own values
   20160512:1.75,    # Getting REALLY ready for finals
 }
 
-with open('dates.json' if len(sys.argv)==0 else sys.argv[0], 'w') as f:
+with open('dates.json' if len(argv)==1 else argv[1], 'w') as f:
   json.dump(dates,f) 
