@@ -1,0 +1,21 @@
+#  CSV file format: 
+#    Each value of each line is represented as a "data type::description"
+#    float::hours_estimate,int::month,int::day,string::class,string::project,string::assignment
+#
+#    For each 'class' of work, for each 'project' for that class, you will have one assignment for that project being assigned to work on at any one time, so that no two assignments within one project type are being worked on at once, and that you only work on the one due most soon at any time.
+
+2,4,1,acm,today,weekly meetup
+6,4,1,math471,report,4
+5,4,2,math376,hw,5
+1,4,2,beta,philanthropy,talk to math and servicedesk and database teams bout buyin stuff
+7.5,4,4,personal,jobs,apply to at least 8 more places & update dice profile
+0.5,4,4,math471,final,revision
+2,4,4,cs425,project,v0 tests and amr web service
+4,4,5,cs325,project,checkpoint2
+4,4,5,kups,zarvox,get basic playlist imported and get local files processing and send mp3 email
+5,4,7,math376,hw,6
+2,4,11,kups,zarvox,get playlists generating for KUPS in production mode
+8,4,11,math471,project,do sensitivity analysis and then get playlists generating for math471 objective function analysis and get pandora/spotify downloaded in doubleblind way
+8,4,23,math471,final,presentation salvaged from proposal + expository writing + graphs
+4,5,4,math471,final,draft
+10,5,12,math471,final,final
