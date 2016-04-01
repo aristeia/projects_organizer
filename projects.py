@@ -4,7 +4,7 @@ from datetime import date, time
 from dateutil import relativedelta
 from functools import reduce
 from time import time as now
-from random import shuffle
+from random import randint
 from copy import deepcopy
 from statistics import pvariance, pstdev, mean
 from bisect import insort
@@ -47,32 +47,6 @@ def getArgIndex(arg):
         return sys.argv.index(a)
   return -1
 
-#inverse proportion of density of average number of hours worked per day
-'''
-
-daterange for event x by sum of average hours per event till that date:
-
-11-1 11-2 11-3 11-4 11-5 11-6 11-7 
-15   12   13   11   10   6    5  sum=72
-
-daterange for event x by average hours for x till that date:
-
-11-1 11-2 11-3 11-4 11-5 11-6 11-7 
-2    2    2    2    2    2    2  sum=14
-
-proportioned according to above density inverted:
-
-daterange for event x by average hours for x till that date:
-
-11-1 11-2 11-3 11-4 11-5 11-6 11-7 
-14*15/72=2.9 14*12/72= NONONONNONO invert it !!!!!
-
-
-
-2 + 1 + 1 + 1/2 + 3 + 1 + 1
-
-
-'''
 def populate_days(start, nDays):
   return [start+relativedelta.relativedelta(days=d) 
           for d in range(nDays)]
@@ -95,7 +69,6 @@ def hour_sorted(lst, hours):
 def process_event(clas,work,event,nDays):
   days = populate_days(event[3],nDays)
   hours = populate_hours(days,clas+"_"+work)
-  # print(hours,clas,work,event,nDays)
   minHours, maxHours = min(hours), max(hours)
   hoursToFill = (len(days)*maxHours)-sum(hours)
   i = 0
@@ -141,11 +114,11 @@ def process_event(clas,work,event,nDays):
             newHours[i][0] = workdays[days[newHours[i][1]].toordinal()][clas+"_"+work][1]
             newHours[i+1][0] = workdays[days[newHours[i+1][1]].toordinal()][clas+"_"+work][1]
           i+=1
-        prevent_inane_workdays(True,2)
+        # prevent_inane_workdays(True,2)
         # prevent_inane_workdays(2)
         # prevent_inane_workdays(2)
         # prevent_inane_workdays(1)
-        prevent_inane_workdays(1)
+        # prevent_inane_workdays(1)
 
 
 def assess_event(clas,work,event):
@@ -157,14 +130,14 @@ def assess_event(clas,work,event):
 
 def clean_events():
   old_variance = calc_variance()
-  eventsTemp = list(events.items())
-  shuffle(eventsTemp)
-  for clas,works in eventsTemp:
-    worksTemp = list(works.items())
-    shuffle(worksTemp)
-    for work, asmts in worksTemp:
-      for event in asmts:
-        assess_event(clas,work,event)
+  eventsTemp = []
+  for clas,works in events.items():
+    for work, asmts in works.items():
+      i=randint(0,len(eventsTemp))
+      eventsTemp.insert(i,(clas,work,asmts))
+  for clas,work,asmts in eventsTemp:
+    for event in asmts:
+      assess_event(clas,work,event)
   return abs(old_variance-calc_variance())/old_variance
 
 def calc_variance():
@@ -363,7 +336,7 @@ print("Performed "+
   " iterations over "+
   str(round(total_time,3))+" seconds")
 if variance_loss>=10**(-2):
-  print("Maxed out the number of iterations trying to converge.\nFor a more-optimal schedule, increase max iterations and runtime params.")
+  print("Maxed out the number of iterations trying to converge.\nFor a more-optimal schedule, increase max iterations and runtime params.\n")
 print("Min hours of "+
   str(int(temp[0]))+':'+minM+
   ", Max hours of "+
