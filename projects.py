@@ -242,7 +242,7 @@ for line in lines[:]:
     lines.remove(line)
 breaks = [[today,today]]
 
-lines.sort(key=(lambda x: int(x[1])+(float(x[2])/30)))
+lines.sort(key=(lambda x: int(x[1])*100 + int(x[2])*3))
 for line in lines[:]:
   year = today.year if today.month<=int(line[1]) else (today+relativedelta.relativedelta(days=365)).year
   eventday = date(year, int(line[1]), int(line[2]))
